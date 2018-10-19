@@ -10,7 +10,7 @@ void ofApp::setup(){
 void ofApp::update(){
 	
 	
-	if (lsl.isConnected()) {
+//	if (lsl.isConnected()) {
 	
 		auto buffer = lsl.flush();
 		
@@ -24,7 +24,7 @@ void ofApp::update(){
 			
 			ofLogWarning() << "Flushed buffer contains " << ss.str();
 		}
-	}
+//	}
 
 }
 

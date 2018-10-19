@@ -34,6 +34,7 @@ private:
 	
   void update();
   void connect();
+  void disconnect();
   void pull();
   bool active;
   std::vector<float> sample_buffer;
