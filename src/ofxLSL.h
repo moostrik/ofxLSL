@@ -29,6 +29,11 @@ public:
 	buffer.clear();
 	return currentBuffer;
   };
+	
+  std::vector< pair<string, string> > getMapping() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return mapping;
+  };
   
 private:
 	
@@ -38,6 +43,7 @@ private:
   void pull();
   bool active;
   std::vector<float> sample_buffer;
+  std::vector< pair<string, string> > mapping;
   
   std::mutex mutex;
   std::unique_ptr<std::thread> thread;

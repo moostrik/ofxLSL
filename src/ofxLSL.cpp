@@ -52,11 +52,25 @@ void ofxLSL::connect() {
   inlet = std::make_unique<lsl::stream_inlet>(streams.front(), 360, 0, false);
 	
   auto info = inlet->info(1.0f);
-//	ofLogNotice() << "Got XML: " << info.desc().child("mappings").first_child().value();
 
   ofLogNotice() << "Connecting to " << info.name() << " at " << info.nominal_srate() << "hz";
 	buffer.reserve(250.0);
 	sample_buffer.reserve(info.channel_count());
+
+  mapping.clear();
+  auto mappingXML = info.desc().child("mappings");
+  for (auto m = mappingXML.first_child(); !m.empty(); m = m.next_sibling()) {
+    bool firstSet = false;
+    pair<string,string> mapElement;
+    for (auto ab = m.first_child(); !ab.empty(); ab = ab.next_sibling()) {
+      for (auto uID = ab.first_child(); !uID.empty(); uID = uID.next_sibling()) {
+        if (!firstSet) {
+          firstSet =true;
+          mapElement.first = uID.value();
+        } else {
+          mapElement.second = uID.value();
+          mapping.emplace_back(mapElement);
+  } } } }
 }
 
 void ofxLSL::pull() {
