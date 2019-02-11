@@ -1,6 +1,6 @@
 #include "ofxLSL.h"
 
-ofxLSL::ofxLSL() : active(false) {}
+ofxLSL::ofxLSL() : active(false), mappingUpdated(false) {}
 
 bool ofxLSL::start() {
   if(active) return false;
@@ -45,6 +45,11 @@ void ofxLSL::disconnect() {
 }
 
 void ofxLSL::connect() {
+//	std::vector<lsl::stream_info> resolvedStreams = lsl::resolve_streams(1.0);
+//
+//	for (auto &s : resolvedStreams)
+//		cout << s.source_id() << " " << s.name() + " (" + s.hostname() + ")" << endl;
+	
   auto streams = lsl::resolve_stream("desc/correlation", "R", 1, 2.f);
   if(streams.size() == 0) return;
 
@@ -71,6 +76,7 @@ void ofxLSL::connect() {
           mapElement.second = uID.value();
           mapping.emplace_back(mapElement);
   } } } }
+  mappingUpdated = true;
 }
 
 void ofxLSL::pull() {

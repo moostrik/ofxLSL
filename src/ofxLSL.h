@@ -12,7 +12,7 @@ struct ofxLSLSample {
 class ofxLSL : public ofThread {
   
 public:
-  ofxLSL();
+	ofxLSL();
 	~ofxLSL() { stop(); };
   
   bool start();
@@ -30,6 +30,14 @@ public:
 	return currentBuffer;
   };
 	
+  bool getMappingUpdated() {
+    if (mappingUpdated) {
+      mappingUpdated = false;
+      return true;
+    }
+    return false;
+  }
+	
   std::vector< pair<string, string> > getMapping() {
     std::lock_guard<std::mutex> lock(mutex);
     return mapping;
@@ -44,9 +52,10 @@ private:
   bool active;
   std::vector<float> sample_buffer;
   std::vector< pair<string, string> > mapping;
+  atomic<bool> mappingUpdated;
   
   std::mutex mutex;
   std::unique_ptr<std::thread> thread;
   std::unique_ptr<lsl::stream_inlet> inlet;
-	std::vector<ofxLSLSample> buffer;
+  std::vector<ofxLSLSample> buffer;
 };
