@@ -38,6 +38,7 @@ void ofxLSL::update() {
 void ofxLSL::disconnect() {
 	ofLogWarning() << "Disconnected from stream";
 	
+	mappingUpdated = true;
 	std::lock_guard<std::mutex> lock(mutex);
 	inlet = nullptr;
 	buffer.clear();
