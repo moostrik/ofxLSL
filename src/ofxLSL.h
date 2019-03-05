@@ -9,6 +9,11 @@ struct ofxLSLSample {
 	std::vector<float> sample;
 };
 
+struct ofxStability {
+	string color = "none";
+	std::vector<int> sample;
+};
+
 class ofxLSL : public ofThread {
 	
 public:
@@ -32,7 +37,12 @@ public:
 	
 	std::vector< pair<string, string> > getMapping() {
 		std::lock_guard<std::mutex> lock(mutex);
-		return mapping;
+		return sample_mapping;
+	};
+	
+	std::vector< ofxStability > getStability() {
+		std::lock_guard<std::mutex> lock(mutex);
+		return stabilities;
 	};
 	
 private:
@@ -40,11 +50,14 @@ private:
 	void update();
 	void connect();
 	void disconnect();
-	void pull();
+	void pullSamples();
+	void pullStability();
 	bool active;
 	std::vector<float> sample_buffer;
-	std::vector< pair<string, string> > mapping;
-	atomic<bool> mappingUpdated;
+	std::vector< pair<string, string> > sample_mapping;
+	
+	std::vector< std::unique_ptr<lsl::stream_inlet> > stability_inlets;
+	std::vector< ofxStability > stabilities;
 	
 	std::mutex mutex;
 	std::unique_ptr<std::thread> thread;
