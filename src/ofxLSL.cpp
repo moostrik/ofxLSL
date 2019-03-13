@@ -83,11 +83,13 @@ void ofxLSL::connect() {
 void ofxLSL::pull() {
 	float ts = inlet->pull_sample(sample_buffer, 1.0);
 	if(ts) {
-		ofLogVerbose() << "Received sample";
 		
 		ofxLSLSample sample;
 		sample.timestamp = ts;
 		sample.sample = std::vector<float>(sample_buffer.begin(), sample_buffer.end());
+		
+		
+		ofLogVerbose() << "Received " << sample.sample.size() << " samples @ time " << ts;
 		
 		std::lock_guard<std::mutex> lock(mutex);
 		while(buffer.size() && buffer.size() >= buffer.capacity()) {
