@@ -50,5 +50,7 @@ private:
 	std::unique_ptr<std::thread> thread;
 	std::unique_ptr<lsl::stream_inlet> inlet;
 	std::vector<ofxLSLSample> buffer;
+	
+	float timeOutHackTime;
 };
 

@@ -78,12 +78,14 @@ void ofxLSL::connect() {
 					mapping.emplace_back(mapElement);
 				} } } }
 	mappingUpdated = true;
+	
+	timeOutHackTime = ofGetElapsedTimef();
 }
 
 void ofxLSL::pull() {
 	float ts = inlet->pull_sample(sample_buffer, 1.0);
 	if(ts) {
-		
+		timeOutHackTime = ofGetElapsedTimef();
 		ofxLSLSample sample;
 		sample.timestamp = ts;
 		sample.sample = std::vector<float>(sample_buffer.begin(), sample_buffer.end());
@@ -98,6 +100,9 @@ void ofxLSL::pull() {
 		}
 		
 		buffer.push_back(sample);
+	}
+	if (timeOutHackTime + 1.0 < ofGetElapsedTimef()) {
+		disconnect();
 	}
 }
 
