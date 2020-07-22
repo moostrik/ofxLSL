@@ -1,6 +1,6 @@
 #include "ofxLSLReceiver.h"
 
-ofxLSLReceiver::ofxLSLReceiver() : active(false) {}
+ofxLSLReceiver::ofxLSLReceiver() : active(false), sampleCapacity(100){}
 
 bool ofxLSLReceiver::start() {
         if(active) return false;
@@ -9,20 +9,26 @@ bool ofxLSLReceiver::start() {
         resolver = make_unique<continuous_resolver>();
         connectThread = std::make_unique<std::thread>(&ofxLSLReceiver::connect, this);
         pullThread = std::make_unique<std::thread>(&ofxLSLReceiver::pull, this);
-        
+
         return true;
 }
 
 bool ofxLSLReceiver::stop() {
         if(!active) return false;
+        disconnect();
+
         active = false;
-        
+
+        cout << "joinConnect" << endl;
         connectThread->join();
         connectThread = nullptr;
+        //disconnect();
+        cout << "joinPull" << endl;
         pullThread->join();
         pullThread = nullptr;
+        cout << "Resolver" << endl;
         resolver = nullptr;
-        
+
         return true;
 }
 
@@ -36,9 +42,13 @@ void ofxLSLReceiver::connect() {
       std::string uniqueId = uniqueIDFromInfo(info);
       auto it = inlets.find(uniqueId);
       if (it == inlets.end()){
-        ofLogNotice("ofxLSLReceiver::connect") << "connect to '" << uniqueId << "'";
-        // insert when not in map
-        inlets.insert({uniqueId, std::make_unique<stream_inlet>(info)});
+        ofLogNotice("ofxLSLReceiver::connect") << "open stream'" << uniqueId << "'";
+        {
+          std::lock_guard<std::mutex> lock(connectMutex);
+          // insert when not in map
+          inlets.insert({uniqueId, std::make_unique<stream_inlet>(info)});
+        }
+        inlets[uniqueId]->open_stream();
       }
     }
 
@@ -53,8 +63,9 @@ void ofxLSLReceiver::connect() {
         }
       }
       if (!found) {
-        ofLogNotice("ofxLSLReceiver::connect") << "disconnect from '" << inlet.first << "'";
+        ofLogNotice("ofxLSLReceiver::connect") << "close stream '" << inlet.first << "'";
         auto it = inlets.find(inlet.first);
+        std::lock_guard<std::mutex> lock(connectMutex);
         inlets.erase (it);
       }
     }
@@ -63,6 +74,40 @@ void ofxLSLReceiver::connect() {
   }
 }
 
-void ofxLSLReceiver::pull() {
+void ofxLSLReceiver::disconnect() {
+  {
+    std::lock_guard<std::mutex> lock(connectMutex);
+    for (auto& inlet: inlets) {
+      inlet.second->close_stream();
+    }
+    inlets.clear();
+  }
+  {
+    std::lock_guard<std::mutex> lock(pullMutex);
+    samples.clear();
+  }
+}
 
+void ofxLSLReceiver::pull() {
+  while(active) {
+    std::lock_guard<std::mutex> lock(connectMutex);
+    for (auto& inlet: inlets) {
+      std::vector<float> sampleBuffer;
+      std::string uID = inlet.first;
+      double ts = inlet.second->pull_sample(sampleBuffer);
+
+      ofxLSLSample sample;
+      sample.timestamp = ts;
+      sample.sample = std::vector<float>(sampleBuffer.begin(), sampleBuffer.end());
+
+      std::lock_guard<std::mutex> lock(pullMutex);
+      samples[uID].push_back(sample);
+      while(samples[uID].size() && samples[uID].size() > sampleCapacity) {
+//        ofLogWarning() << "Buffer capacity reached, erasing samples";
+        samples[uID].erase(samples[uID].begin());
+      }
+
+   //   cout <<
+    }
+  }
 }

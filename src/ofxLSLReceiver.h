@@ -8,7 +8,7 @@
 using namespace lsl;
 
 struct ofxLSLSample {
-        float timestamp = 0.0;
+        double timestamp = 0.0;
         std::vector<float> sample;
 };
 
@@ -21,36 +21,49 @@ public:
         bool start();
         bool stop();
         bool isConnected() {
-                std::lock_guard<std::mutex> lock(mutex);
+                std::lock_guard<std::mutex> lock(connectMutex);
                 return inlets.size() > 0;
-
         }
 
-        std::vector<ofxLSLSample> flush() {
-                std::lock_guard<std::mutex> lock(mutex);
-                auto currentBuffer = std::vector<ofxLSLSample>(buffer.begin(), buffer.end());
-                buffer.clear();
-                return currentBuffer;
-        };
-private:
+        vector<std::string> getStreamNames() {
+          std::lock_guard<std::mutex> lock(pullMutex);
+          vector<std::string> names;
+          for (auto& s: samples) {
+            names.push_back(s.first);
+          }
+          return names;
+        }
 
-        void update();
+        std::vector<ofxLSLSample> flush(std::string _streamName) {
+          std::lock_guard<std::mutex> lock(pullMutex);
+
+          std::vector<ofxLSLSample> currentBuffer;
+          auto it = samples.find(_streamName);
+          if (it == samples.end()) {
+            return currentBuffer;
+          }
+
+          currentBuffer = std::vector<ofxLSLSample>(samples[_streamName].begin(), samples[_streamName].end());
+          samples[_streamName].clear();
+          return currentBuffer;
+        };
+
+private:
         void connect();
         void disconnect();
         void pull();
 
         bool active;
-
-        std::mutex mutex;
+        std::mutex connectMutex;
         std::unique_ptr<std::thread> connectThread;
+        std::mutex pullMutex;
         std::unique_ptr<std::thread> pullThread;
         std::unique_ptr<lsl::stream_inlet> inlet;
-        std::vector<ofxLSLSample> buffer;
+        std::unique_ptr<continuous_resolver> resolver;        
+        std::map<const std::string, std::unique_ptr<lsl::stream_inlet>> inlets;
 
-        std::unique_ptr<continuous_resolver> resolver;
-        
-        std::map<std::string, std::unique_ptr<stream_info>> infos;
-        std::map<std::string, std::unique_ptr<lsl::stream_inlet>> inlets;
+        int sampleCapacity;
+        std::map<const std::string, vector<ofxLSLSample>> samples;
 
         std::string uniqueIDFromInfo(stream_info _info) {
           std::string uID = _info.name()+_info.type()+_info.source_id()+_info.hostname();

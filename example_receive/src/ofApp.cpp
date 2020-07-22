@@ -8,6 +8,15 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
+  auto names = receive.getStreamNames();
+
+  for (auto n: names) {
+    auto samples = receive.flush(n);
+    if (samples.size()) {
+      cout << samples[0].timestamp << endl;
+    }
+  }
+
   vector<float> v = {ofGetElapsedTimef()};
 }
 
