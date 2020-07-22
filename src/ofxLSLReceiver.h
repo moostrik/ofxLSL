@@ -4,14 +4,12 @@
 #include "ofLog.h"
 #include "lsl_cpp.h"
 
+
+using namespace lsl;
+
 struct ofxLSLSample {
         float timestamp = 0.0;
         std::vector<float> sample;
-};
-
-struct ofxStability {
-        string color = "none";
-        std::vector<int> sample;
 };
 
 class ofxLSLReceiver : public ofThread {
@@ -24,7 +22,7 @@ public:
         bool stop();
         bool isConnected() {
                 std::lock_guard<std::mutex> lock(mutex);
-                return inlet != nullptr;
+                return inlets.size() > 0;
 
         }
 
@@ -34,34 +32,29 @@ public:
                 buffer.clear();
                 return currentBuffer;
         };
-
-        std::vector< pair<string, string> > getMapping() {
-                std::lock_guard<std::mutex> lock(mutex);
-                return sample_mapping;
-        };
-
-        std::vector< ofxStability > getStability() {
-                std::lock_guard<std::mutex> lock(mutex);
-                return stabilities;
-        };
-
 private:
 
         void update();
         void connect();
         void disconnect();
-        void pullSamples();
-        void pullStability();
-        bool active;
-        std::vector<float> sample_buffer;
-        std::vector< pair<string, string> > sample_mapping;
+        void pull();
 
-        std::vector< std::unique_ptr<lsl::stream_inlet> > stability_inlets;
-        std::vector< ofxStability > stabilities;
+        bool active;
 
         std::mutex mutex;
-        std::unique_ptr<std::thread> thread;
+        std::unique_ptr<std::thread> connectThread;
+        std::unique_ptr<std::thread> pullThread;
         std::unique_ptr<lsl::stream_inlet> inlet;
         std::vector<ofxLSLSample> buffer;
+
+        std::unique_ptr<continuous_resolver> resolver;
+        
+        std::map<std::string, std::unique_ptr<stream_info>> infos;
+        std::map<std::string, std::unique_ptr<lsl::stream_inlet>> inlets;
+
+        std::string uniqueIDFromInfo(stream_info _info) {
+          std::string uID = _info.name()+_info.type()+_info.source_id()+_info.hostname();
+          return uID;
+        }
 };
 

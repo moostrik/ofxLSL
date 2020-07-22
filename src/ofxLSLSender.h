@@ -22,15 +22,12 @@ public:
 
     auto it = outlets.find(name);
     if (it != outlets.end()) {
-      ofLogWarning("ofxLSLSender::addStream") << "stream '" << name << "' already exists";
+      ofLogWarning("ofxLSLSender::addStream") << "stream '" << name << "' already exists, overwriting";
       return;
     }
 
-    std::shared_ptr<stream_outlet> outlet = std::make_shared<stream_outlet>(_info);
-    outlets.insert({name, outlet});
-
-    std::shared_ptr<stream_info> info = std::make_shared<stream_info>(_info);
-    infos.insert({name, info});
+    outlets[name] = std::make_unique<stream_outlet>(_info);
+    infos[name] = std::make_unique<stream_info>(_info);
   }
 
 
@@ -43,7 +40,7 @@ public:
     }
 
     auto& info = infos[name];
-    if (!checkCount(info, _values)) {
+    if (info->channel_count() != _values.size()) {
       ofLogWarning("ofxLSLSender::addSample") << "wrong number of samples";
       return;
     }
@@ -72,13 +69,8 @@ public:
   void send();
 
 private:
-  std::map<std::string, std::shared_ptr<stream_outlet>> outlets;
-  std::map<std::string, std::shared_ptr<stream_info>> infos;
-
-  template<typename T>
-  bool checkCount(const std::shared_ptr<stream_info> _info, const vector<T>& _values) {
-    return (_info->channel_count() == _values.size());
-  }
+  std::map<std::string, std::unique_ptr<stream_outlet>> outlets;
+  std::map<std::string, std::unique_ptr<stream_info>> infos;
 
   bool hadConsumers;
 
