@@ -2,17 +2,23 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	lsl.start();
+  ofSetLogLevel(OF_LOG_VERBOSE);
 
+  send.addStream("test", "time");
+
+
+//  receive.start();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+  vector<float> v = {ofGetElapsedTimef()};
+  send.addSample("test", v);
 	
-	
+  /*
 //	if (lsl.isConnected()) {
 	
-		auto buffer = lsl.flush();
+                auto buffer = receive.flush();
 		
 		if(buffer.size()) {
 			auto sampleToUse = buffer.back();
@@ -25,7 +31,7 @@ void ofApp::update(){
 			ofLogWarning() << "Flushed buffer contains " << ss.str();
 		}
 //	}
-
+  */
 }
 
 //--------------------------------------------------------------

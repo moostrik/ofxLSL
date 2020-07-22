@@ -9,8 +9,10 @@ public:
 	void setup();
 	void update();
 	void draw();
-	
-	ofxLSL lsl;
+
+        ofxLSLSender send;
+        ofxLSLReceiver receive;
+
 	void keyPressed(int key);
 	void keyReleased(int key);
 	void mouseMoved(int x, int y);
