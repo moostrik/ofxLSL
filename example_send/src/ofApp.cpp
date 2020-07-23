@@ -19,39 +19,39 @@ void ofApp::setup(){
     intParameterB.addListener(this, &ofApp::intParameterBListener);
     stringParameter.addListener(this, &ofApp::stringParameterListener);
     
-    sender.addStream("stream1", "floats", 3, IRREGULAR_RATE, cf_float32);
-    sender.addStream("stream2", "ints", 2, IRREGULAR_RATE, cf_int8);
-    sender.addStream("stream3", "ints", 1, IRREGULAR_RATE, cf_int8);
-    sender.addStream("stream4", "string", 1, IRREGULAR_RATE, cf_string);
+    sender.addStream("stream1", "floats", 3, IRREGULAR_RATE, cf_float32, "uid");
+    sender.addStream("stream2", "ints", 2, IRREGULAR_RATE, cf_int8, "uid");
+    sender.addStream("stream3", "ints", 1, IRREGULAR_RATE, cf_int8, "uid");
+    sender.addStream("stream4", "string", 1, IRREGULAR_RATE, cf_string, "uid");
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     numChannelsConsumed = 0;
-    if(sender.isConsumed("stream1", "floats")) numChannelsConsumed++;
-    if(sender.isConsumed("stream2", "ints")) numChannelsConsumed++;
-    if(sender.isConsumed("stream3", "ints")) numChannelsConsumed++;
-    if(sender.isConsumed("stream4", "string")) numChannelsConsumed++;
+    if(sender.isConsumed("stream1", "floats", "uid")) numChannelsConsumed++;
+    if(sender.isConsumed("stream2", "ints", "uid")) numChannelsConsumed++;
+    if(sender.isConsumed("stream3", "ints", "uid")) numChannelsConsumed++;
+    if(sender.isConsumed("stream4", "string", "uid")) numChannelsConsumed++;
 }
 
 void ofApp::floatParameterListener(glm::vec3& _value) {
     vector<float> floatVec = {_value.x, _value.y, _value.z};
-    sender.addSample(floatVec, "stream1", "floats");
+    sender.addSample(floatVec, "stream1", "floats", "uid");
 }
 
 void ofApp::intParameterAListener(int& _value){
     vector<int> intVec = {intParameterA1, intParameterA2};
-    sender.addSample(intVec, "stream2", "ints");
+    sender.addSample(intVec, "stream2", "ints", "uid");
 }
 
 void ofApp::intParameterBListener(int& _value){
     vector<int> intVec2 = {intParameterB};
-    sender.addSample(intVec2, "stream3", "ints");
+    sender.addSample(intVec2, "stream3", "ints", "uid");
 }
 
 void ofApp::stringParameterListener(string& _value){
     vector<string> stringVec = {stringParameter};
-    sender.addSample(stringVec, "stream4", "string");
+    sender.addSample(stringVec, "stream4", "string", "uid");
 }
 
 //--------------------------------------------------------------
