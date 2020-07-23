@@ -19,14 +19,10 @@ bool ofxLSLReceiver::stop() {
 
         active = false;
 
-        cout << "joinConnect" << endl;
         connectThread->join();
         connectThread = nullptr;
-        //disconnect();
-        cout << "joinPull" << endl;
         pullThread->join();
         pullThread = nullptr;
-        cout << "Resolver" << endl;
         resolver = nullptr;
 
         return true;
