@@ -8,8 +8,13 @@
 using namespace lsl;
 
 struct ofxLSLSample {
-        double timestamp = 0.0;
-        std::vector<float> sample;
+  double timestamp = 0.0;
+  std::vector<float> sample;
+};
+
+struct ofxLSLContainer{
+  stream_info info;
+  std::vector<ofxLSLSample> samples;
 };
 
 class ofxLSLReceiver : public ofThread {
@@ -25,26 +30,23 @@ public:
                 return inlets.size() > 0;
         }
 
-        vector<std::string> getStreamNames() {
+        vector<stream_info> getStreamNames() {
           std::lock_guard<std::mutex> lock(pullMutex);
-          vector<std::string> names;
-          for (auto& s: samples) {
-            names.push_back(s.first);
+          vector<stream_info> infos;
+          for (const auto& c: containers) {
+            infos.push_back(c->info);
           }
-          return names;
+          return infos;
         }
 
-        std::vector<ofxLSLSample> flush(std::string _streamName) {
-          std::lock_guard<std::mutex> lock(pullMutex);
-
+        std::vector<ofxLSLSample> flush(stream_info info) {
           std::vector<ofxLSLSample> currentBuffer;
-          auto it = samples.find(_streamName);
-          if (it == samples.end()) {
-            return currentBuffer;
+          auto container = getContainer(info);
+          if (container) {
+            std::lock_guard<std::mutex> lock(pullMutex);
+            currentBuffer = std::vector<ofxLSLSample>(container->samples.begin(), container->samples.end());
+            container->samples.clear();
           }
-
-          currentBuffer = std::vector<ofxLSLSample>(samples[_streamName].begin(), samples[_streamName].end());
-          samples[_streamName].clear();
           return currentBuffer;
         };
 
@@ -58,16 +60,30 @@ private:
         std::unique_ptr<std::thread> connectThread;
         std::mutex pullMutex;
         std::unique_ptr<std::thread> pullThread;
-        std::unique_ptr<lsl::stream_inlet> inlet;
-        std::unique_ptr<continuous_resolver> resolver;        
-        std::map<const std::string, std::unique_ptr<lsl::stream_inlet>> inlets;
 
-        int sampleCapacity;
-        std::map<const std::string, vector<ofxLSLSample>> samples;
+        std::unique_ptr<continuous_resolver> resolver;
+        std::vector<std::unique_ptr<lsl::stream_inlet>> inlets;
 
-        std::string uniqueIDFromInfo(stream_info _info) {
-          std::string uID = _info.name()+_info.type()+_info.source_id()+_info.hostname();
-          return uID;
-        }
+        int containerCapacity;
+        std::vector<std::shared_ptr<ofxLSLContainer>> containers;
+
+
+  bool hadConsumers;
+
+  std::shared_ptr<ofxLSLContainer> getContainer(stream_info _info){
+    for(auto container: containers) {
+      if (isEqual(_info, container->info)){
+          return container;
+      }
+    }
+    return nullptr;
+  }
+
+  bool isEqual(stream_info _infoA, stream_info _infoB){
+    if (_infoA.name() == _infoB.name() && _infoA.type() == _infoB.type() && _infoA.source_id() == _infoB.source_id()){
+      return true;
+    }
+    return false;
+  }
 };
 

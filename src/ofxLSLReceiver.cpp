@@ -1,6 +1,6 @@
 #include "ofxLSLReceiver.h"
 
-ofxLSLReceiver::ofxLSLReceiver() : active(false), sampleCapacity(100){}
+ofxLSLReceiver::ofxLSLReceiver() : active(false), containerCapacity(100){}
 
 bool ofxLSLReceiver::start() {
         if(active) return false;
@@ -36,37 +36,38 @@ void ofxLSLReceiver::connect() {
 
   while(active) {
     std::vector<stream_info> resolved_infos = resolver->results();
+    std::lock_guard<std::mutex> lock(connectMutex);
 
     // add new streams
     for (auto& info: resolved_infos) {
-      std::string uniqueId = uniqueIDFromInfo(info);
-      auto it = inlets.find(uniqueId);
-      if (it == inlets.end()){
-        ofLogNotice("ofxLSLReceiver::connect") << "open stream'" << uniqueId << "'";
-        {
-          std::lock_guard<std::mutex> lock(connectMutex);
-          // insert when not in map
-          inlets.insert({uniqueId, std::make_unique<stream_inlet>(info)});
+      bool inletFound = false;
+      for(auto& inlet: inlets) {
+        if (isEqual(info, inlet->info())){
+            inletFound = true;;
         }
-        inlets[uniqueId]->open_stream();
+      }
+
+      if (!inletFound) {
+        ofLogNotice("ofxLSLReceiver::connect") << "open stream'" << info.name() << "' with type '" << info.type() << " and source ID '" << info.source_id() << "'";
+        inlets.emplace_back(std::make_unique<stream_inlet>(info));
+        auto& inlet = inlets.back();
+        inlet->open_stream();
       }
     }
 
     // remove disconnected streams
-
-    for (auto& inlet: inlets) {
+    for (int i = inlets.size()-1; i>=0; i--) {
+      auto& inlet = inlets[i];
       bool found = false;
-      for (auto& info: resolved_infos) {
-        std::string uniqueId = uniqueIDFromInfo(info);
-        if (uniqueId == inlet.first) {
+      const auto& iI = inlet->info();
+      for (auto& rI: resolved_infos) {
+        if (isEqual(iI, rI)) {
           found = true;
         }
       }
       if (!found) {
-        ofLogNotice("ofxLSLReceiver::connect") << "close stream '" << inlet.first << "'";
-        auto it = inlets.find(inlet.first);
-        std::lock_guard<std::mutex> lock(connectMutex);
-        inlets.erase (it);
+        ofLogNotice("ofxLSLReceiver::connect") << "lost stream '" << iI.name() << "' with type '" << iI.type() << " and source ID '" << iI.source_id() << "'";
+        inlets.erase(inlets.begin()+i);
       }
     }
 
@@ -78,13 +79,13 @@ void ofxLSLReceiver::disconnect() {
   {
     std::lock_guard<std::mutex> lock(connectMutex);
     for (auto& inlet: inlets) {
-      inlet.second->close_stream();
+      inlet->close_stream();
     }
     inlets.clear();
   }
   {
     std::lock_guard<std::mutex> lock(pullMutex);
-    samples.clear();
+    containers.clear();
   }
 }
 
@@ -93,8 +94,8 @@ void ofxLSLReceiver::pull() {
     std::lock_guard<std::mutex> lock(connectMutex);
     for (auto& inlet: inlets) {
       std::vector<float> sampleBuffer;
-      std::string uID = inlet.first;
-      double ts = inlet.second->pull_sample(sampleBuffer, 0.01);
+      double ts = inlet->pull_sample(sampleBuffer, 0.01);
+      const auto& info = inlet->info();
 
       ofxLSLSample sample;
       sample.timestamp = ts;
@@ -103,11 +104,19 @@ void ofxLSLReceiver::pull() {
         sample.sample = std::vector<float>(sampleBuffer.begin(), sampleBuffer.end());
 
         std::lock_guard<std::mutex> lock(pullMutex);
-        samples[uID].push_back(sample);
 
-        while(samples[uID].size() && samples[uID].size() > sampleCapacity) {
+        auto container = getContainer(info);
+        if (!container) {
+          containers.emplace_back(std::make_shared<ofxLSLContainer>());
+          container = containers.back();
+          container->info = info;
+        }
+        auto& samples = container->samples;
+        samples.push_back(sample);
+
+        while(samples.size() && samples.size() > containerCapacity) {
   //        ofLogWarning() << "Buffer capacity reached, erasing samples";
-          samples[uID].erase(samples[uID].begin());
+          samples.erase(samples.begin());
         }
       }
     }
