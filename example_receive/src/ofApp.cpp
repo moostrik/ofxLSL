@@ -13,7 +13,7 @@ void ofApp::update(){
   for (auto n: names) {
     auto samples = receive.flush(n);
     if (samples.size()) {
-      cout << samples[0].timestamp << endl;
+      cout << samples[0].timestamp <<  " " << samples[0].sample[0] << endl;
     }
   }
 

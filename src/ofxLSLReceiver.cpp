@@ -94,20 +94,22 @@ void ofxLSLReceiver::pull() {
     for (auto& inlet: inlets) {
       std::vector<float> sampleBuffer;
       std::string uID = inlet.first;
-      double ts = inlet.second->pull_sample(sampleBuffer);
+      double ts = inlet.second->pull_sample(sampleBuffer, 0.01);
 
       ofxLSLSample sample;
       sample.timestamp = ts;
-      sample.sample = std::vector<float>(sampleBuffer.begin(), sampleBuffer.end());
 
-      std::lock_guard<std::mutex> lock(pullMutex);
-      samples[uID].push_back(sample);
-      while(samples[uID].size() && samples[uID].size() > sampleCapacity) {
-//        ofLogWarning() << "Buffer capacity reached, erasing samples";
-        samples[uID].erase(samples[uID].begin());
+      if (ts > 0) {
+        sample.sample = std::vector<float>(sampleBuffer.begin(), sampleBuffer.end());
+
+        std::lock_guard<std::mutex> lock(pullMutex);
+        samples[uID].push_back(sample);
+
+        while(samples[uID].size() && samples[uID].size() > sampleCapacity) {
+  //        ofLogWarning() << "Buffer capacity reached, erasing samples";
+          samples[uID].erase(samples[uID].begin());
+        }
       }
-
-   //   cout <<
     }
   }
 }
