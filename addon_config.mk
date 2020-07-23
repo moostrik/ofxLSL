@@ -14,3 +14,6 @@ common:
 linux64:
     ADDON_LIBS = libs/labstreaminglayer/lib/linux64/liblsl64.so
     ADDON_CPPFLAGS += -D_LINUX
+
+osx:
+    ADDON_LIBS = libs/labstreaminglayer/lib/osx/liblsl-static.a
