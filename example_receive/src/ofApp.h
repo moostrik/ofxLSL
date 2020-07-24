@@ -3,12 +3,11 @@
 #include "ofMain.h"
 #include "ofxLSL.h"
 
+class ofApp : public ofBaseApp {
+ public:
+  void setup();
+  void update();
+  void draw();
 
-class ofApp : public ofBaseApp{
-public:
-	void setup();
-	void update();
-	void draw();
-
-        ofxLSLReceiver receive;
+  ofxLSLReceiver receive;
 };

@@ -1,19 +1,19 @@
 #include "ofApp.h"
 
 //--------------------------------------------------------------
-void ofApp::setup(){
+void ofApp::setup() {
   ofSetLogLevel(OF_LOG_VERBOSE);
   receive.start();
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
+void ofApp::update() {
   auto names = receive.getStreamNames();
 
-  for (auto n: names) {
+  for (auto n : names) {
     auto samples = receive.flush(n);
     if (samples.size()) {
-      cout << samples[0].timestamp <<  " " << samples[0].sample[0] << endl;
+      cout << samples[0].timestamp << " " << samples[0].sample[0] << endl;
     }
   }
 
@@ -21,6 +21,4 @@ void ofApp::update(){
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
-
-}
+void ofApp::draw() {}
