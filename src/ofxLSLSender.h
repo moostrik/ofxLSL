@@ -21,11 +21,11 @@ public:
     // resolve and check if stream exists
     std::shared_ptr<stream_outlet> outlet = getOutlet(_info.name(), _info.type(), _info.source_id());
     if (outlet){
-      ofLogWarning("ofxLSLSender::addStream") << "stream '" << _info.name() << "' with type '" << _info.type() << " and source ID '" << _info.source_id() << "' already exists";
+      ofLogWarning("ofxLSLSender::addStream") << "stream '" << _info.name() << "' of type '" << _info.type() << "' and ID '" << _info.source_id() << "' already exists";
       return;
     }
 
-    ofLogNotice("ofxLSLSender::addStream") << "created stream '" << _info.name() << "' with type '" << _info.type() << " and source ID '" << _info.source_id() << "'";
+    ofLogNotice("ofxLSLSender::addStream") << "created stream '" << _info.name() << "' of type '" << _info.type() << "' and ID '" << _info.source_id() << "'";
     outlet = std::make_shared<stream_outlet>(_info);
     outlets.push_back((outlet));
   }
@@ -36,7 +36,7 @@ public:
 
     std::shared_ptr<stream_outlet> outlet = getOutlet(name, type, source_id);
     if (!outlet){
-        ofLogWarning("ofxLSLSender::addSample") << "stream '" << name << "' with type '" << type << " and source ID '" << source_id << "' does not exist";
+        ofLogWarning("ofxLSLSender::addSample") << "stream '" << name << "' of type '" << type << " and ID '" << source_id << "' does not exist";
         return;
     }
 
@@ -52,6 +52,20 @@ public:
     
     bool isConsumed(const std::string &name, const std::string &type, const std::string &source_id=std::string()) {
         return getOutlet(name, type, source_id)->have_consumers();
+    }
+
+    int getNumStreams() {
+      return outlets.size();
+    }
+
+    int getNumStreamsConnected() {
+      int numStreamsConnected = 0;
+      for (const auto& outlet: outlets){
+        if (outlet->have_consumers()) {
+          numStreamsConnected++;
+        }
+      }
+      return numStreamsConnected;
     }
     
 private:
