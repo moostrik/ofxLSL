@@ -95,3 +95,4 @@ build/**
 #########################
 settings.*
 liblsl.*
+libs/labstreaminglayer/include/*
