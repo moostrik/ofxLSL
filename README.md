@@ -14,7 +14,7 @@ sudo make install
 sudo ldconfig
 ```
 * Copy lib to addon (use cp -P to preserve Link)
-`cp -P  build/LSL/liblsl/liblsl.* [your location of OF addons]/ofxLSL/libs/labstreaminglayer/lib/linux64`
+`cp -P  LSL/liblsl/liblsl.* [your location of OF addons]/ofxLSL/libs/labstreaminglayer/lib/linux64`
 * Copy include to addon (use cp -P to preserve Link)
 `cp -r ../LSL/liblsl/include [your location of OF addons]/ofxLSL/libs/labstreaminglayer/`
 
