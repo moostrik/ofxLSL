@@ -1,5 +1,5 @@
 # About ofxLSL
-
+tested on ubuntu 20.04 using liblsl 1.14
 
 # INSTALL LINUX#
 * Clone labstreaminglayer and submodules from from [Github](https://github.com/sccn/labstreaminglayer "https://github.com/sccn/labstreaminglayer")
