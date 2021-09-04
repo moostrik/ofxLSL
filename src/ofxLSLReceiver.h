@@ -54,11 +54,12 @@ class ofxLSLReceiver : public ofThread {
   void disconnect();
   void pull();
 
-  bool active;
+  atomic<bool> active;
   std::mutex connectMutex;
   std::unique_ptr<std::thread> connectThread;
   std::mutex pullMutex;
   std::unique_ptr<std::thread> pullThread;
+  std::condition_variable pullSignal;
 
   std::unique_ptr<continuous_resolver> resolver;
   std::vector<std::unique_ptr<lsl::stream_inlet>> inlets;

@@ -15,9 +15,9 @@ bool ofxLSLReceiver::start() {
 
 bool ofxLSLReceiver::stop() {
   if (!active) return false;
+  active = false;
   disconnect();
 
-  active = false;
 
   connectThread->join();
   connectThread = nullptr;
@@ -31,8 +31,6 @@ bool ofxLSLReceiver::stop() {
 void ofxLSLReceiver::connect() {
   while (active) {
     std::vector<stream_info> resolved_infos = resolver->results();
-    std::lock_guard<std::mutex> lock(connectMutex);
-
     // add new streams
     for (auto& info : resolved_infos) {
       bool inletFound = false;
@@ -47,9 +45,12 @@ void ofxLSLReceiver::connect() {
         ofLogNotice("ofxLSLReceiver::connect")
             << "open stream'" << info.name() << "' with type '" << info.type()
             << " and source ID '" << info.source_id() << "'";
-        inlets.emplace_back(std::make_unique<stream_inlet>(info));
-        auto& inlet = inlets.back();
+        auto inlet  = std::make_unique<stream_inlet>(info);
         inlet->open_stream();
+
+        std::lock_guard<std::mutex> lock(connectMutex);
+        inlets.emplace_back(std::move(inlet));
+
       }
     }
 
@@ -67,6 +68,7 @@ void ofxLSLReceiver::connect() {
         ofLogNotice("ofxLSLReceiver::connect")
             << "lost stream '" << iI.name() << "' with type '" << iI.type()
             << " and source ID '" << iI.source_id() << "'";
+        std::lock_guard<std::mutex> lock(connectMutex);
         inlets.erase(inlets.begin() + i);
       }
     }
@@ -90,11 +92,16 @@ void ofxLSLReceiver::disconnect() {
 }
 
 void ofxLSLReceiver::pull() {
+  std::unique_lock<std::mutex> pullLock(pullMutex);
+  std::chrono::microseconds timeout(100);
+
   while (active) {
+
     std::lock_guard<std::mutex> lock(connectMutex);
+
     for (auto& inlet : inlets) {
       std::vector<float> sampleBuffer;
-      double ts = inlet->pull_sample(sampleBuffer, 0.001);
+      double ts = inlet->pull_sample(sampleBuffer, 0.0);
       const auto& info = inlet->info();
 
       ofxLSLSample sample;
@@ -104,7 +111,7 @@ void ofxLSLReceiver::pull() {
         sample.sample =
             std::vector<float>(sampleBuffer.begin(), sampleBuffer.end());
 
-        std::lock_guard<std::mutex> lock(pullMutex);
+//        std::lock_guard<std::mutex> lock(pullMutex);
 
         auto container = getContainer(info);
         if (!container) {
@@ -122,5 +129,7 @@ void ofxLSLReceiver::pull() {
         }
       }
     }
+
+    pullSignal.wait_for(pullLock, timeout, [&] { return !active.load(); });
   }
 }
