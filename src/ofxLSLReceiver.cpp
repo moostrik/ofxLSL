@@ -94,7 +94,7 @@ void ofxLSLReceiver::pull() {
     std::lock_guard<std::mutex> lock(connectMutex);
     for (auto& inlet : inlets) {
       std::vector<float> sampleBuffer;
-      double ts = inlet->pull_sample(sampleBuffer, 0.01);
+      double ts = inlet->pull_sample(sampleBuffer, 0.001);
       const auto& info = inlet->info();
 
       ofxLSLSample sample;
