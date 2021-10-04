@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "lsl_cpp.h"
 #include "ofLog.h"
@@ -23,31 +23,12 @@ class ofxLSLReceiver : public ofThread {
 
   bool start();
   bool stop();
-  bool isConnected() {
-    std::lock_guard<std::mutex> lock(connectMutex);
-    return inlets.size() > 0;
-  }
 
-  vector<stream_info> getStreamNames() {
-    std::lock_guard<std::mutex> lock(pullMutex);
-    vector<stream_info> infos;
-    for (const auto& c : containers) {
-      infos.push_back(c->info);
-    }
-    return infos;
-  }
+  bool isConnected();
 
-  std::vector<ofxLSLSample> flush(stream_info info) {
-    std::vector<ofxLSLSample> currentBuffer;
-    auto container = getContainer(info);
-    if (container) {
-      std::lock_guard<std::mutex> lock(pullMutex);
-      currentBuffer = std::vector<ofxLSLSample>(container->samples.begin(),
-                                                container->samples.end());
-      container->samples.clear();
-    }
-    return currentBuffer;
-  };
+  vector<stream_info> getStreamNames();
+
+  std::vector<ofxLSLSample> flush(stream_info info);
 
  private:
   void connect();
@@ -69,20 +50,7 @@ class ofxLSLReceiver : public ofThread {
 
   bool hadConsumers;
 
-  std::shared_ptr<ofxLSLContainer> getContainer(stream_info _info) {
-    for (auto container : containers) {
-      if (isEqual(_info, container->info)) {
-        return container;
-      }
-    }
-    return nullptr;
-  }
+  std::shared_ptr<ofxLSLContainer> getContainer(stream_info _info);
 
-  bool isEqual(stream_info _infoA, stream_info _infoB) {
-    if (_infoA.name() == _infoB.name() && _infoA.type() == _infoB.type() &&
-        _infoA.source_id() == _infoB.source_id()) {
-      return true;
-    }
-    return false;
-  }
+  bool isEqual(stream_info _infoA, stream_info _infoB);
 };

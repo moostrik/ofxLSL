@@ -1,4 +1,4 @@
-#include "ofxLSLReceiver.h"
+﻿#include "ofxLSLReceiver.h"
 
 ofxLSLReceiver::ofxLSLReceiver() : active(false), containerCapacity(100) {}
 
@@ -91,6 +91,23 @@ void ofxLSLReceiver::disconnect() {
   }
 }
 
+bool ofxLSLReceiver::isConnected() {
+  std::lock_guard<std::mutex> lock(connectMutex);
+  return inlets.size() > 0;
+}
+
+std::vector<ofxLSLSample> ofxLSLReceiver::flush(stream_info info) {
+  std::vector<ofxLSLSample> currentBuffer;
+  auto container = getContainer(info);
+  if (container) {
+    std::lock_guard<std::mutex> lock(pullMutex);
+    currentBuffer = std::vector<ofxLSLSample>(container->samples.begin(),
+                                              container->samples.end());
+    container->samples.clear();
+  }
+  return currentBuffer;
+};
+
 void ofxLSLReceiver::pull() {
   std::unique_lock<std::mutex> pullLock(pullMutex);
   std::chrono::microseconds timeout(100);
@@ -132,4 +149,30 @@ void ofxLSLReceiver::pull() {
 
     pullSignal.wait_for(pullLock, timeout, [&] { return !active.load(); });
   }
+}
+
+vector<stream_info> ofxLSLReceiver::getStreamNames() {
+  std::lock_guard<std::mutex> lock(pullMutex);
+  vector<stream_info> infos;
+  for (const auto& c : containers) {
+    infos.push_back(c->info);
+  }
+  return infos;
+}
+
+std::shared_ptr<ofxLSLContainer> ofxLSLReceiver::getContainer(stream_info _info) {
+  for (auto container : containers) {
+    if (isEqual(_info, container->info)) {
+      return container;
+    }
+  }
+  return nullptr;
+}
+
+bool ofxLSLReceiver::isEqual(stream_info _infoA, stream_info _infoB) {
+  if (_infoA.name() == _infoB.name() && _infoA.type() == _infoB.type() &&
+      _infoA.source_id() == _infoB.source_id()) {
+    return true;
+  }
+  return false;
 }

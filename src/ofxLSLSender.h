@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "lsl_cpp.h"
 #include "ofLog.h"
@@ -11,31 +11,30 @@ class ofxLSLSender {
   ofxLSLSender() {}
   ~ofxLSLSender() { ; }
 
-  void addStream(const std::string &name, const std::string &type,
+  void addStream(const std::string &name,
+                 const std::string &type,
                  int32_t channel_count = 1,
                  double nominal_srate = IRREGULAR_RATE,
                  channel_format_t channel_format = cf_float32,
-                 const std::string &source_id = std::string()) {
-    stream_info info(name, type, channel_count, nominal_srate, channel_format,
-                     source_id);
+                 const std::string &source_id = std::string())
+  {
+    stream_info info(name, type, channel_count, nominal_srate, channel_format, source_id);
     addStream(info);
   }
 
   void addStream(const stream_info &_info) {
     // resolve and check if stream exists
-    std::shared_ptr<stream_outlet> outlet =
-        getOutlet(_info.name(), _info.type(), _info.source_id());
+    auto outlet = getOutlet(_info.name(), _info.type(), _info.source_id());
     if (outlet) {
       ofLogWarning("ofxLSLSender::addStream")
-          << "stream '" << _info.name() << "' of type '" << _info.type()
-          << "' and ID '" << _info.source_id() << "' already exists";
+        << "stream '" << _info.name() << "' of type '" << _info.type()
+        << "' and ID '" << _info.source_id() << "' already exists";
       return;
     }
-
+    outlet = std::make_shared<stream_outlet>(_info);
     ofLogNotice("ofxLSLSender::addStream")
         << "created stream '" << _info.name() << "' of type '" << _info.type()
         << "' and ID '" << _info.source_id() << "'";
-    outlet = std::make_shared<stream_outlet>(_info);
     outlets.push_back((outlet));
   }
 
@@ -43,7 +42,7 @@ class ofxLSLSender {
   void addSample(const vector<T> &_values, const std::string &name,
                  const std::string &type,
                  const std::string &source_id = std::string()) {
-    std::shared_ptr<stream_outlet> outlet = getOutlet(name, type, source_id);
+    auto outlet = getOutlet(name, type, source_id);
     if (!outlet) {
       ofLogWarning("ofxLSLSender::addSample")
           << "stream '" << name << "' of type '" << type << " and ID '"
@@ -85,18 +84,15 @@ class ofxLSLSender {
   std::vector<std::shared_ptr<stream_outlet>> outlets;
 
   std::shared_ptr<stream_outlet> getOutlet(
-      const std::string &name, const std::string &type,
-      const std::string &source_id = std::string()) {
+    const std::string &name, const std::string &type,
+    const std::string &source_id = std::string())
+  {
     for (auto outlet : outlets) {
       const auto &info = outlet->info();
-
       if (source_id.size()) {
-        if (info.name() == name && info.type() == type &&
-            info.source_id() == source_id) {
+        if (info.name() == name && info.type() == type && info.source_id() == source_id) {
           return outlet;
         }
-      } else if (info.name() == name && info.type() == type) {
-        return outlet;
       }
     }
     return nullptr;
