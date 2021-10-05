@@ -60,7 +60,7 @@ bool BaseReceiver::stop() {
 }
 
 void BaseReceiver::run() {
-  std::unique_lock<std::mutex> pullLock(pullMutex);
+  std::unique_lock<std::mutex> pullLock(runMutex);
   std::chrono::microseconds timeout(100);
 
   while (active) {

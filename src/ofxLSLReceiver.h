@@ -15,6 +15,7 @@ class BaseReceiver : public ofThread {
   BaseReceiver(std::string _streamName, std::string _sourceId);
   ~BaseReceiver();
 
+  void setCapacity(int value) { sampleCapacity.store(value); }
   bool isConnected();
   std::string getStreamName() { return streamName; }
   std::string getSourceId()   { return sourceId; }
@@ -32,15 +33,16 @@ protected:
   virtual void pull() = 0;
 
   atomic<bool> active;
-  std::mutex pullMutex;
+  std::mutex runMutex;
   std::unique_ptr<std::thread> pullThread;
   std::condition_variable pullSignal;
+  std::mutex pullMutex;
 
   std::string streamName;
   std::string sourceId;
   std::shared_ptr<lsl::stream_inlet> inlet;
 
-  int sampleCapacity;
+  atomic<int> sampleCapacity;
 };
 
 
@@ -64,15 +66,20 @@ public:
     return flushSamples;
   }
 
+  ofEvent<const std::shared_ptr<Sample<T>>&> onSample;
+
 protected:
   void pull() override {
     auto sampleBuffer = std::make_shared<Sample<T>>();
     auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
     sampleBuffer->timestamp = ts;
-    if (ts > 0) samples.push_back(sampleBuffer);
-    while (samples.size() && samples.size() > sampleCapacity) {
-      ofLogWarning() << "Buffer capacity reached, erasing samples";
-      samples.erase(samples.begin());
+    if (ts > 0) {
+      ofNotifyEvent(onSample, sampleBuffer, this);
+      std::lock_guard<std::mutex> lock(pullMutex);
+      samples.push_back(sampleBuffer);
+      while (samples.size() && samples.size() > sampleCapacity) {
+        samples.erase(samples.begin());
+      }
     }
   }
 
