@@ -72,7 +72,7 @@ protected:
   void pull() override {
     auto sampleBuffer = std::make_shared<TimedSample<T>>();
     auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
-    sampleBuffer->timestamp = ts;
+    sampleBuffer->timeStamp = ts;
     if (ts > 0) {
       ofNotifyEvent(onSample, sampleBuffer, this);
       std::lock_guard<std::mutex> lock(pullMutex);
