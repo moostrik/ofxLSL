@@ -4,9 +4,11 @@
 void ofApp::setup() {
   ofSetLogLevel(OF_LOG_VERBOSE);
 
+  useAppTime.addListener(this, &ofApp::useAppTimeListener);
+
   gui.setup();
   gui.setName("LSL SENDER");
-  gui.add(useAppTime.set("app time", false));
+  gui.add(useAppTime.set("app time", true));
   gui.add(numChannelsConsumed.set("channels consumed", 0, 0, 4));
   gui.add(floatParameter.set("floats", glm::vec3(0, 1, 2), glm::vec3(0, 0, 0), glm::vec3(4, 4, 4)));
   gui.add(intParameterA1.set("int A1", 0, 0, 3));
@@ -15,7 +17,6 @@ void ofApp::setup() {
   gui.add(stringParameter.set("string", "string"));
   ofSetWindowShape(gui.getWidth() + 20, gui.getHeight() + 20);
 
-  useAppTime.addListener(this, &ofApp::useAppTimeListener);
   floatParameter.addListener(this, &ofApp::floatParameterListener);
   intParameterA1.addListener(this, &ofApp::intParameterAListener);
   intParameterA2.addListener(this, &ofApp::intParameterAListener);
