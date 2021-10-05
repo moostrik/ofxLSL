@@ -69,7 +69,9 @@ class Sender {
 
   bool isConsumed(const std::string &name, const std::string &type,
                   const std::string &source_id = std::string()) {
-    return getOutlet(name, type, source_id)->have_consumers();
+    auto outlet = getOutlet(name, type, source_id);
+    if (!outlet) return false;
+    return outlet->have_consumers();
   }
 
   int getNumStreams() { return outlets.size(); }
