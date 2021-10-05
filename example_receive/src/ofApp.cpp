@@ -33,7 +33,7 @@ void ofApp::update() {
   auto floatSamples = receiveFloat->flush();
   if (floatSamples.size()) {
     auto lastSample = floatSamples.back();
-    lastTime = ofToString(lastSample->timestamp);
+    lastTime = ofToString(lastSample->timeStamp);
     auto data = lastSample->sample;
     if (data.size() >= 3) {
       floatParameter.set(glm::vec3(data[0], data[1], data[2]));
@@ -43,7 +43,7 @@ void ofApp::update() {
   auto intSamplesA = receiveIntA->flush();
   if (intSamplesA.size()) {
     auto lastSample = intSamplesA.back();
-    lastTime = ofToString(lastSample->timestamp);
+    lastTime = ofToString(lastSample->timeStamp);
     auto data = lastSample->sample;
     if (data.size() >= 2) {
       intParameterA1.set(data[0]);
@@ -54,7 +54,7 @@ void ofApp::update() {
   auto intSamplesB = receiveIntB->flush();
   if (intSamplesB.size()) {
     auto lastSample = intSamplesB.back();
-    lastTime = ofToString(lastSample->timestamp);
+    lastTime = ofToString(lastSample->timeStamp);
     auto data = lastSample->sample;
     if (data.size() >= 1) {
       intParameterB.set(data[0]);
@@ -64,7 +64,7 @@ void ofApp::update() {
   auto stringSample = receiveString->flush();
   if (stringSample.size()) {
     auto lastSample = stringSample.back();
-    lastTime = ofToString(lastSample->timestamp);
+    lastTime = ofToString(lastSample->timeStamp);
     auto data = lastSample->sample;
     if (data.size() >= 1) {
       stringParameter.set(data[0]);

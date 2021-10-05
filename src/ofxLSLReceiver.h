@@ -47,9 +47,9 @@ protected:
 
 
 template <typename T>
-class Sample {
+class TimedSample {
 public:
-  double timestamp = 0.0;
+  double timeStamp = 0.0;
   std::vector<T> sample;
 };
 
@@ -59,18 +59,18 @@ public:
   Receiver(std::string _streamName, std::string _sourceId = "") :
     BaseReceiver(_streamName, _sourceId) {}
 
-  std::vector<std::shared_ptr<Sample<T>>> flush() {
+  std::vector<std::shared_ptr<TimedSample<T>>> flush() {
     std::lock_guard<std::mutex> lock(pullMutex);
-    std::vector<std::shared_ptr<Sample<T>>> flushSamples;
+    std::vector<std::shared_ptr<TimedSample<T>>> flushSamples;
     flushSamples.swap(samples);
     return flushSamples;
   }
 
-  ofEvent<const std::shared_ptr<Sample<T>>&> onSample;
+  ofEvent<const std::shared_ptr<TimedSample<T>>&> onSample;
 
 protected:
   void pull() override {
-    auto sampleBuffer = std::make_shared<Sample<T>>();
+    auto sampleBuffer = std::make_shared<TimedSample<T>>();
     auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
     sampleBuffer->timestamp = ts;
     if (ts > 0) {
@@ -83,7 +83,7 @@ protected:
     }
   }
 
-  std::vector<std::shared_ptr<Sample<T>>> samples;
+  std::vector<std::shared_ptr<TimedSample<T>>> samples;
 };
 
 }
