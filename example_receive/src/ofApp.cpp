@@ -1,23 +1,18 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
   ofSetLogLevel(OF_LOG_VERBOSE);
-  receive.start();
+
+  receive = std::make_unique<ofxLSL::Receiver>("stream1", "uid");
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-  auto names = receive.getStreamNames();
-
-  for (auto n : names) {
-    auto samples = receive.flush(n);
-    if (samples.size()) {
-      cout << samples[0].timestamp << " " << samples[0].sample[0] << endl;
-    }
+  auto samples = receive->flush();
+  if (samples.size()) {
+    cout << samples[0].timestamp << " " << samples[0].sample[0] << endl;
   }
-
-  vector<float> v = {ofGetElapsedTimef()};
 }
 
 //--------------------------------------------------------------

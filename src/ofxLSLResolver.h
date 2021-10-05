@@ -33,14 +33,15 @@ public:
 private:
   Resolver();
 
-  void connect();
+  void run();
   void disconnect();
 
   bool isEqual(stream_info _infoA, stream_info _infoB);
 
-  atomic<bool> active;
-  std::mutex connectMutex;
-  std::unique_ptr<std::thread> connectThread;
+  atomic<bool> running;
+  std::unique_ptr<std::thread> runThread;
+  std::condition_variable runSignal;
+  std::mutex runMutex;
 
   std::unique_ptr<continuous_resolver> resolver;
   std::vector<std::shared_ptr<lsl::stream_inlet>> inlets;

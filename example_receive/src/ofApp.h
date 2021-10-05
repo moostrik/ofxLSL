@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ofMain.h"
 #include "ofxLSL.h"
@@ -9,5 +9,5 @@ class ofApp : public ofBaseApp {
   void update();
   void draw();
 
-  ofxLSLReceiver receive;
+  std::unique_ptr<ofxLSL::Receiver> receive;
 };

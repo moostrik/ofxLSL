@@ -5,24 +5,31 @@ using namespace ofxLSL;
 
 
 Resolver::Resolver() {
-  active = true;
-
+  running = true;
   resolver = make_unique<continuous_resolver>();
-  connectThread = std::make_unique<std::thread>(&Resolver::connect, this);
+  auto libMajor = library_version() / 100;
+  auto libMinor = library_version() % 100;
+  auto protMajor = lsl_protocol_version() / 100;
+  auto protMinor = lsl_protocol_version() % 100;
+  ofLogNotice("ofxLSL::Resolver") << "start resolving LSL version " << libMajor << "." << libMinor <<
+                                     " and protocol " << protMajor << "." << protMinor;
+  runThread = std::make_unique<std::thread>(&Resolver::run, this);
 }
 
 Resolver::~Resolver() {
-  active = false;
-  disconnect();
-
-  connectThread->join();
-  connectThread = nullptr;
+  running = false;
+  runSignal.notify_one();
+  if (runThread->joinable()) runThread->join();
+  runThread = nullptr;
+//  disconnect();
   resolver = nullptr;
 }
 
 
-void Resolver::connect() {
-  while (active) {
+void Resolver::run() {
+  std::unique_lock<std::mutex> lock(runMutex);
+  std::chrono::milliseconds timeout(1000);
+  while (running.load()) {
     std::vector<stream_info> resolved_infos = resolver->results();
     // add new streams
     for (auto& info : resolved_infos) {
@@ -34,13 +41,13 @@ void Resolver::connect() {
       }
 
       if (!inletFound) {
-        ofLogNotice("ofxLSLReceiver::connect")
-            << "open stream'" << info.name() << "' with type '" << info.type()
-            << " and source ID '" << info.source_id() << "'";
+        ofLogNotice("ofxLSL::Resolver")
+            << "found stream '" << info.name() << "' from source '" << info.source_id() <<
+               " with "<< info.channel_count() << " " << info.type() <<
+               " channels and a sampling rate of" << info.nominal_srate();
         auto inlet  = std::make_shared<stream_inlet>(info);
         inlet->open_stream();
 
-        std::lock_guard<std::mutex> lock(connectMutex);
         ofNotifyEvent(onConnect, inlet, this);
         inlets.emplace_back(std::move(inlet));
       }
@@ -57,29 +64,25 @@ void Resolver::connect() {
         }
       }
       if (!found) {
-        ofLogNotice("ofxLSLReceiver::connect")
-            << "lost stream '" << iI.name() << "' with type '" << iI.type()
-            << " and source ID '" << iI.source_id() << "'";
-        std::lock_guard<std::mutex> lock(connectMutex);
+        ofLogNotice("ofxLSL::Resolver")
+            << "lost stream '" << iI.name() <<
+               " and source ID '" << iI.source_id() << "'";
 
         ofNotifyEvent(onDisconnect, inlet, this);
         inlets.erase(inlets.begin() + i);
       }
     }
-
-    sleep(500);
+    runSignal.wait_for(lock, timeout, [&] { return !running.load(); });
   }
 }
 
 void Resolver::disconnect() {
-  {
-    std::lock_guard<std::mutex> lock(connectMutex);
-    for (auto& inlet : inlets) {
-      ofNotifyEvent(onDisconnect, inlet, this);
-      inlet->close_stream();
-    }
-    inlets.clear();
+  std::lock_guard<std::mutex> lock(runMutex);
+  for (auto& inlet : inlets) {
+    ofNotifyEvent(onDisconnect, inlet, this);
+//    inlet->close_stream();
   }
+  inlets.clear();
 }
 
 

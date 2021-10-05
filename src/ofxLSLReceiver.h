@@ -3,54 +3,56 @@
 #include "lsl_cpp.h"
 #include "ofLog.h"
 #include "ofMain.h"
+#include "ofxLSLResolver.h"
 
 using namespace lsl;
 
-struct ofxLSLSample {
+namespace ofxLSL {
+
+struct Sample {
   double timestamp = 0.0;
   std::vector<float> sample;
 };
 
-struct ofxLSLContainer {
+struct Container {
   stream_info info;
-  std::vector<ofxLSLSample> samples;
+  std::vector<Sample> samples;
 };
 
-class ofxLSLReceiver : public ofThread {
+class Receiver : public ofThread {
+  friend Resolver;
  public:
-  ofxLSLReceiver();
-  ~ofxLSLReceiver() { stop(); };
+  Receiver(std::string _streamName, std::string _sourceId);
+  ~Receiver();
+
+  bool isConnected();
+  std::string getStreamName() { return streamName; }
+  std::string getSourceId()   { return sourceId; }
+
+  std::vector<Sample> flush();
+
+protected:
+  void handleConnect(const std::shared_ptr<lsl::stream_inlet>& value);
+  void handleDisconnect(const std::shared_ptr<lsl::stream_inlet>& value);
+
+ private:
+  std::shared_ptr<Resolver> resolver;
+  std::mutex resolverMutex;
 
   bool start();
   bool stop();
-
-  bool isConnected();
-
-  vector<stream_info> getStreamNames();
-
-  std::vector<ofxLSLSample> flush(stream_info info);
-
- private:
-  void connect();
-  void disconnect();
   void pull();
 
   atomic<bool> active;
-  std::mutex connectMutex;
-  std::unique_ptr<std::thread> connectThread;
   std::mutex pullMutex;
   std::unique_ptr<std::thread> pullThread;
   std::condition_variable pullSignal;
 
-  std::unique_ptr<continuous_resolver> resolver;
-  std::vector<std::unique_ptr<lsl::stream_inlet>> inlets;
+  std::string streamName;
+  std::string sourceId;
+  std::shared_ptr<lsl::stream_inlet> inlet;
 
-  int containerCapacity;
-  std::vector<std::shared_ptr<ofxLSLContainer>> containers;
-
-  bool hadConsumers;
-
-  std::shared_ptr<ofxLSLContainer> getContainer(stream_info _info);
-
-  bool isEqual(stream_info _infoA, stream_info _infoB);
+  int sampleCapacity;
+  std::vector<Sample> samples;
 };
+}
