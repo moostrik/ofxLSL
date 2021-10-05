@@ -1,4 +1,4 @@
-#include "ofApp.h"
+﻿#include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup() {
@@ -6,14 +6,16 @@ void ofApp::setup() {
 
   gui.setup();
   gui.setName("LSL SENDER");
+  gui.add(useAppTime.set("app time", false));
   gui.add(numChannelsConsumed.set("channels consumed", 0, 0, 4));
-  gui.add(floatParameter.set("floats", glm::vec3(0, 1, 2), glm::vec3(0, 0, 0),
-                             glm::vec3(4, 4, 4)));
+  gui.add(floatParameter.set("floats", glm::vec3(0, 1, 2), glm::vec3(0, 0, 0), glm::vec3(4, 4, 4)));
   gui.add(intParameterA1.set("int A1", 0, 0, 3));
   gui.add(intParameterA2.set("int A2", 0, 0, 3));
   gui.add(intParameterB.set("int B", 0, 0, 3));
   gui.add(stringParameter.set("string", "string"));
+  ofSetWindowShape(gui.getWidth() + 20, gui.getHeight() + 20);
 
+  useAppTime.addListener(this, &ofApp::useAppTimeListener);
   floatParameter.addListener(this, &ofApp::floatParameterListener);
   intParameterA1.addListener(this, &ofApp::intParameterAListener);
   intParameterA2.addListener(this, &ofApp::intParameterAListener);
@@ -33,6 +35,10 @@ void ofApp::update() {
   if (sender.isConsumed("stream2", "ints", "uid")) numChannelsConsumed++;
   if (sender.isConsumed("stream3", "ints", "uid")) numChannelsConsumed++;
   if (sender.isConsumed("stream4", "string", "uid")) numChannelsConsumed++;
+}
+
+void ofApp::useAppTimeListener(bool &_value) {
+  sender.useAppTime(_value);
 }
 
 void ofApp::floatParameterListener(glm::vec3& _value) {

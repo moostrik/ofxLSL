@@ -6,10 +6,13 @@
 
 using namespace lsl;
 
-class ofxLSLSender {
+namespace ofxLSL {
+class Sender {
  public:
-  ofxLSLSender() {}
-  ~ofxLSLSender() { ; }
+  Sender() : bUseAppTime(false) {}
+  ~Sender() { ; }
+
+  void useAppTime(const bool& value) { bUseAppTime = value;}
 
   void addStream(const std::string &name,
                  const std::string &type,
@@ -60,7 +63,8 @@ class ofxLSLSender {
 
     bool hasConsumers = outlet->have_consumers();
 
-    outlet->push_sample(_values);
+    if (bUseAppTime) outlet->push_sample(_values, ofGetElapsedTimef());
+    else outlet->push_sample(_values);
   }
 
   bool isConsumed(const std::string &name, const std::string &type,
@@ -81,6 +85,7 @@ class ofxLSLSender {
   }
 
  private:
+ bool bUseAppTime;
   std::vector<std::shared_ptr<stream_outlet>> outlets;
 
   std::shared_ptr<stream_outlet> getOutlet(
@@ -98,3 +103,4 @@ class ofxLSLSender {
     return nullptr;
   }
 };
+}
