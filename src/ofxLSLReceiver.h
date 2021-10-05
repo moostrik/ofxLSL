@@ -9,39 +9,27 @@ using namespace lsl;
 
 namespace ofxLSL {
 
-struct Sample {
-  double timestamp = 0.0;
-  std::vector<float> sample;
-};
-
-struct Container {
-  stream_info info;
-  std::vector<Sample> samples;
-};
-
-class Receiver : public ofThread {
+class BaseReceiver : public ofThread {
   friend Resolver;
  public:
-  Receiver(std::string _streamName, std::string _sourceId);
-  ~Receiver();
+  BaseReceiver(std::string _streamName, std::string _sourceId);
+  ~BaseReceiver();
 
   bool isConnected();
   std::string getStreamName() { return streamName; }
   std::string getSourceId()   { return sourceId; }
 
-  std::vector<Sample> flush();
-
 protected:
   void handleConnect(const std::shared_ptr<lsl::stream_inlet>& value);
   void handleDisconnect(const std::shared_ptr<lsl::stream_inlet>& value);
 
- private:
   std::shared_ptr<Resolver> resolver;
   std::mutex resolverMutex;
 
   bool start();
   bool stop();
-  void pull();
+  void run();
+  virtual void pull() = 0;
 
   atomic<bool> active;
   std::mutex pullMutex;
@@ -53,6 +41,42 @@ protected:
   std::shared_ptr<lsl::stream_inlet> inlet;
 
   int sampleCapacity;
-  std::vector<Sample> samples;
 };
+
+
+template <typename T>
+class Sample {
+public:
+  double timestamp = 0.0;
+  std::vector<T> sample;
+};
+
+template <typename T>
+class Receiver : public BaseReceiver {
+public:
+  Receiver(std::string _streamName, std::string _sourceId = "") :
+    BaseReceiver(_streamName, _sourceId) {}
+
+  std::vector<std::shared_ptr<Sample<T>>> flush() {
+    std::lock_guard<std::mutex> lock(pullMutex);
+    std::vector<std::shared_ptr<Sample<T>>> flushSamples;
+    flushSamples.swap(samples);
+    return flushSamples;
+  }
+
+protected:
+  void pull() override {
+    auto sampleBuffer = std::make_shared<Sample<T>>();
+    auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
+    sampleBuffer->timestamp = ts;
+    if (ts > 0) samples.push_back(sampleBuffer);
+    while (samples.size() && samples.size() > sampleCapacity) {
+      ofLogWarning() << "Buffer capacity reached, erasing samples";
+      samples.erase(samples.begin());
+    }
+  }
+
+  std::vector<std::shared_ptr<Sample<T>>> samples;
+};
+
 }

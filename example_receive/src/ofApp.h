@@ -9,5 +9,5 @@ class ofApp : public ofBaseApp {
   void update();
   void draw();
 
-  std::unique_ptr<ofxLSL::Receiver> receive;
+  std::shared_ptr<ofxLSL::Receiver<float>> receive;
 };

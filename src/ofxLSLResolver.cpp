@@ -43,8 +43,8 @@ void Resolver::run() {
       if (!inletFound) {
         ofLogNotice("ofxLSL::Resolver")
             << "found stream '" << info.name() << "' from source '" << info.source_id() <<
-               " with "<< info.channel_count() << " " << info.type() <<
-               " channels and a sampling rate of" << info.nominal_srate();
+               "' with "<< info.channel_count() << " " << info.type() <<
+               " channels and a sampling rate of " << info.nominal_srate();
         auto inlet  = std::make_shared<stream_inlet>(info);
         inlet->open_stream();
 
