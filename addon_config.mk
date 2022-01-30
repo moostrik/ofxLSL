@@ -16,4 +16,3 @@ linux64:
     ADDON_CPPFLAGS += -D_LINUX
 
 osx:
-    ADDON_LIBS = libs/labstreaminglayer/lib/osx/liblsl-static.a
