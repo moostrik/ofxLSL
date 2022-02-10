@@ -26,3 +26,10 @@ sudo ldconfig
 * Copy include to addon (use cp -P to preserve Link)
 `cp -r ../LSL/liblsl/include [your location of OF addons]/ofxLSL/libs/labstreaminglayer/`
 
+
+# INSTALL MAC#
+
+* download OSX lsl lybrary from [Github](https://github.com/sccn/liblsl/releases)
+* Copy dylib to addon 'libs/labstreaminglayer/lib/osx/'
+* Copy include to addon 'libs/labstreaminglayer/include/'
+* build example with projectgenerator
