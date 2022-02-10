@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "lsl_cpp.h"
 #include "ofLog.h"
@@ -66,6 +66,7 @@ public:
     return flushSamples;
   }
 
+  ~Receiver() { stop(); }
   ofEvent<const std::shared_ptr<TimedSample<T>>&> onSample;
 
 protected:
