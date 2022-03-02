@@ -33,3 +33,7 @@ sudo ldconfig
 * Copy dylib to addon 'libs/labstreaminglayer/lib/osx/'
 * Copy include to addon 'libs/labstreaminglayer/include/'
 * build example with projectgenerator
+* add `Run Script` to `Build Phases` with the following lines
+```
+rsync -aved "$OF_PATH/addons/ofxLSL/libs/labstreaminglayer/lib/osx/liblsl.1.14.0.dylib" "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/Frameworks/";
+```
