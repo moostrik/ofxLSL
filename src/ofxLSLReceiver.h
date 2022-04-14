@@ -67,7 +67,6 @@ public:
   }
 
   ~Receiver() { stop(); }
-  ofEvent<const std::shared_ptr<TimedSample<T>>&> onSample;
 
 protected:
   void pull() override {
@@ -75,7 +74,6 @@ protected:
     auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
     sampleBuffer->timeStamp = ts;
     if (ts > 0) {
-      ofNotifyEvent(onSample, sampleBuffer, this);
       std::lock_guard<std::mutex> lock(pullMutex);
       samples.push_back(sampleBuffer);
       while (samples.size() && samples.size() > sampleCapacity) {
@@ -87,4 +85,35 @@ protected:
   std::vector<std::shared_ptr<TimedSample<T>>> samples;
 };
 
+
+template <typename T>
+class EventSample {
+public:
+  double timeStamp = 0.0;
+  std::vector<T> sample;
+  std::string streamName;
+  std::string sourceId;
+};
+
+
+template <typename T>
+class EventReceiver : public BaseReceiver {
+public:
+  EventReceiver(std::string _streamName, std::string _sourceId = "") :
+    BaseReceiver(_streamName, _sourceId) {}
+
+  ~EventReceiver() { stop(); }
+
+  ofEvent<const std::shared_ptr<EventSample<T>>&> onSample;
+
+protected:
+  void pull() override {
+    auto sampleBuffer = std::make_shared<EventSample<T>>();
+    auto ts = inlet->pull_sample(sampleBuffer->sample, 0.0);
+    sampleBuffer->timeStamp = ts;
+    sampleBuffer->streamName = streamName;
+    sampleBuffer->sourceId = sourceId;
+    if (ts > 0) ofNotifyEvent(onSample, sampleBuffer, this);
+  }
+};
 }
