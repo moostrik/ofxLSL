@@ -1,4 +1,4 @@
-﻿#include "ofxLSLResolver.h"
+#include "ofxLSLResolver.h"
 
 using namespace lsl;
 using namespace ofxLSL;
@@ -11,7 +11,7 @@ Resolver::Resolver() {
   auto libMinor = library_version() % 100;
   auto protMajor = lsl_protocol_version() / 100;
   auto protMinor = lsl_protocol_version() % 100;
-  ofLogNotice("ofxLSL::Resolver") << "start resolving LSL version " << libMajor << "." << libMinor <<
+  ofLogNotice("ofxLSL::Resolver") << " LSL version " << libMajor << "." << libMinor <<
                                      " and protocol " << protMajor << "." << protMinor;
   runThread = std::make_unique<std::thread>(&Resolver::run, this);
 }
@@ -41,7 +41,7 @@ void Resolver::run() {
       }
 
       if (!inletFound) {
-        ofLogNotice("ofxLSL::Resolver")
+        ofLogVerbose("ofxLSL::Resolver")
             << "found stream '" << info.name() << "' from source '" << info.source_id() <<
                "' with "<< info.channel_count() << " " << info.type() <<
                " channels and a sampling rate of " << info.nominal_srate();

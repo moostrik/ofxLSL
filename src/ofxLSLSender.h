@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "lsl_cpp.h"
 #include "ofLog.h"
@@ -9,7 +9,15 @@ using namespace lsl;
 namespace ofxLSL {
 class Sender {
  public:
-  Sender() : bUseAppTime(false) {}
+  Sender() : bUseAppTime(false) {
+    auto libMajor = library_version() / 100;
+    auto libMinor = library_version() % 100;
+    auto protMajor = lsl_protocol_version() / 100;
+    auto protMinor = lsl_protocol_version() % 100;
+    ofLogNotice("ofxLSL::Sender") << "LSL version " << libMajor << "." << libMinor <<
+                                     " and protocol " << protMajor << "." << protMinor;
+  }
+
   ~Sender() { ; }
 
   void useAppTime(const bool& value) { bUseAppTime = value;}
@@ -35,7 +43,7 @@ class Sender {
       return;
     }
     outlet = std::make_shared<stream_outlet>(_info);
-    ofLogNotice("ofxLSLSender::addStream")
+    ofLogVerbose("ofxLSLSender::addStream")
         << "created stream '" << _info.name() << "' of type '" << _info.type()
         << "' and ID '" << _info.source_id() << "'";
     outlets.push_back((outlet));
